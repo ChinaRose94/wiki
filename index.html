@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Archivist's Index // RAEtron Database</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- D3.js Library for Node-Link Diagrams -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+
+        :root {
+            --bg-main: #050a05;
+            --bg-panel: rgba(0, 0, 0, 0.6);
+            --bg-sidebar: #020502;
+            --text-main: #39ff14;
+            --text-dim: #1e7010;
+            --text-white: #ffffff;
+            --border-base: #1e7010;
+            --border-active: #39ff14;
+            --glow-text: 0 0 5px var(--text-main), 0 0 10px var(--text-dim);
+            --glow-box: 0 0 10px var(--text-dim) inset, 0 0 10px var(--text-dim);
+            --accent-red: #ef4444;
+            --accent-blue: #0ea5e9;
+        }
+
+        .theme-print {
+            --bg-main: #f4f1ea;
+            --bg-panel: #ffffff;
+            --bg-sidebar: #e8e5dc;
+            --text-main: #1a1a1a;
+            --text-dim: #555555;
+            --text-white: #1a1a1a;
+            --border-base: #999999;
+            --border-active: #000000;
+            --glow-text: none;
+            --glow-box: none;
+            --accent-red: #b91c1c;
+            --accent-blue: #0369a1;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Space Mono', monospace;
+            min-height: 100dvh; 
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        @media (min-width: 768px) {
+            body { height: 100dvh; overflow: hidden; }
+        }
+
+        /* CRT Full Screen Overlay */
+        .scanlines { position: relative; }
+        .scanlines::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 50;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        /* Dynamic Classes */
+        .dyn-glow-text { text-shadow: var(--glow-text); }
+        .dyn-glow-box { box-shadow: var(--glow-box); border: 1px solid var(--border-active); background-color: var(--bg-panel); }
+        .dyn-border { border-color: var(--border-base); }
+        .dyn-border-active { border-color: var(--border-active); }
+        .dyn-bg-sidebar { background-color: var(--bg-sidebar); }
+        .dyn-bg-main { background-color: var(--bg-main); }
+        
+        button { transition: all 0.2s; color: var(--text-main); cursor: pointer; }
+        button:hover { background-color: var(--text-main); color: var(--bg-main); }
+        
+        .nav-btn { border-color: transparent; white-space: nowrap; }
+        .nav-btn:hover { border-color: var(--border-active); }
+        .nav-active { background-color: var(--text-main); color: var(--bg-main) !important; }
+
+        /* Image Processing CSS */
+        .img-container {
+            position: relative;
+            background-color: #000;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        .theme-print .img-container { background-color: transparent; }
+        
+        .crt-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(100%) sepia(100%) hue-rotate(65deg) saturate(400%) contrast(150%) brightness(0.9);
+            mix-blend-mode: screen;
+            opacity: 0.8;
+            transition: filter 0.3s, mix-blend-mode 0.3s;
+        }
+        
+        .theme-print .crt-img {
+            filter: grayscale(100%) contrast(150%) sepia(30%) brightness(0.85);
+            mix-blend-mode: multiply;
+            opacity: 1;
+        }
+
+        .img-scanlines::after {
+            content: " ";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.4) 3px);
+            pointer-events: none;
+        }
+        .theme-print .img-scanlines::after { display: none; }
+
+        /* SVG Graph Styling */
+        .node circle { stroke: var(--text-main); stroke-width: 2px; transition: all 0.3s; }
+        .node text { fill: var(--text-main); font-family: 'Space Mono', monospace; font-size: 10px; pointer-events: none; }
+        .link { stroke: var(--border-active); stroke-opacity: 0.6; stroke-dasharray: 4; }
+        .theme-print .link { stroke-dasharray: none; stroke: var(--border-base); }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-main); }
+        ::-webkit-scrollbar-thumb { background: var(--border-base); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--border-active); }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body id="app-body" class="scanlines">
+
+    <header class="border-b dyn-border-active p-4 flex flex-wrap justify-between items-center dyn-bg-sidebar z-10 shrink-0 gap-4">
+        <div class="flex items-center gap-4">
+            <svg class="w-8 h-8 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path d="M12 3v18M3 12h18M15.5 6.5l-7 7M8.5 6.5l7 7" /></svg>
+            <div>
+                <h1 class="font-vt323 text-2xl md:text-3xl tracking-widest m-0 leading-none dyn-glow-text">THE ARCHIVIST'S WIKI</h1>
+                <p class="text-[10px] md:text-xs uppercase tracking-widest opacity-80 mt-1">Terminal ID: 86-ALPHA // Signal Intercept</p>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="toggleTheme()" id="theme-btn" class="text-[10px] border dyn-border px-2 py-1 uppercase tracking-widest hover:bg-[var(--text-main)]"> [ SWAP TO PRINT MODE ] </button>
+        </div>
+    </header>
+
+    <main class="flex flex-1 flex-col md:flex-row w-full md:overflow-hidden z-10">
+        <!-- Sidebar Navigation -->
+        <aside class="w-full md:w-64 border-b md:border-b-0 md:border-r dyn-border dyn-bg-sidebar p-3 md:p-4 flex-shrink-0 flex flex-col md:overflow-y-auto">
+            <h2 class="text-sm tracking-widest mb-2 md:mb-4 opacity-70 border-b dyn-border pb-1 md:pb-2 font-bold hidden md:block">DATA DIRECTORIES</h2>
+            <nav class="flex md:flex-col overflow-x-auto md:overflow-x-visible space-x-2 md:space-x-0 md:space-y-1 pb-2 md:pb-0 scrollbar-hide w-full" id="nav-menu">
+                <button onclick="filterData('ALL')" class="flex-shrink-0 md:w-full text-left px-3 py-2 text-sm border nav-btn nav-active" data-filter="ALL">[::] ALL RECORDS</button>
+                <button onclick="filterData('OPTICS')" class="flex-shrink-0 md:w-full text-left px-3 py-2 text-sm border nav-btn" data-filter="OPTICS">[01] OPTICS</button>
+                <button onclick="filterData('ACOUSTICS')" class="flex-shrink-0 md:w-full text-left px-3 py-2 text-sm border nav-btn" data-filter="ACOUSTICS">[02] ACOUSTICS</button>
+                <button onclick="filterData('QUANTUM')" class="flex-shrink-0 md:w-full text-left px-3 py-2 text-sm border nav-btn" data-filter="QUANTUM">[03] QUANTUM</button>
+                <button onclick="filterData('CONSPIRACY')" class="flex-shrink-0 md:w-full text-left px-3 py-2 text-sm border nav-btn" data-filter="CONSPIRACY">[04] CONSPIRACY</button>
+                <button onclick="filterData('HARDWARE')" class="flex-shrink-0 md:w-full text-left px-3 py-2 text-sm border nav-btn" data-filter="HARDWARE">[05] HARDWARE</button>
+                <button onclick="filterData('DIMENSIONAL')" class="flex-shrink-0 md:w-full text-left px-3 py-2 text-sm border nav-btn" data-filter="DIMENSIONAL">[06] DIMENSIONAL</button>
+                <button onclick="filterData('ENTITIES')" class="flex-shrink-0 md:w-full text-left px-3 py-2 text-sm border nav-btn" data-filter="ENTITIES">[07] ENTITIES</button>
+                <button onclick="filterData('PERSONNEL')" class="flex-shrink-0 md:w-full text-left px-3 py-2 text-sm border nav-btn" data-filter="PERSONNEL">[08] PERSONNEL</button>
+                <div class="md:my-4 w-px md:w-full h-full md:h-px dyn-bg-sidebar border-r md:border-t dyn-border mx-2 md:mx-0"></div>
+                <button onclick="showNetworkGraph()" class="flex-shrink-0 md:w-full text-left px-3 py-2 text-sm border nav-btn text-[var(--accent-red)] border-[var(--accent-red)] hover:bg-[var(--accent-red)]" id="nav-network">[**] SIGNAL NETWORK</button>
+            </nav>
+        </aside>
+
+        <!-- Content Area -->
+        <section class="flex-1 p-4 md:p-6 overflow-y-auto dyn-bg-main relative w-full h-full" id="content-scroll">
+            
+            <!-- Manifesto (Visible only on ALL view) -->
+            <div id="manifesto" class="max-w-4xl mx-auto mb-8 p-6 border dyn-border dyn-glow-box">
+                <h2 class="font-vt323 text-2xl mb-4 text-[var(--text-main)] dyn-glow-text">// CURATOR'S MANIFESTO</h2>
+                <p class="text-sm leading-relaxed opacity-90">
+                    The Bible is not a science textbook, but it is the original manual for reality. It speaks in poetry about objective forces we are only just now rediscovering through physics, frequency, and quantum mechanics. 
+                    This archive maps the bridge between the Divine architectural order—'The True Signal'—and the physical limitations of human perception. By blending 1986's fringe science with ancient truth, we expose the reality beneath the static. 
+                    Study these files. The Veil is thinner than you think.
+                </p>
+            </div>
+
+            <!-- Grid View -->
+            <div id="grid-view" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-12 w-full"></div>
+
+            <!-- Detail View (Hidden initially) -->
+            <div id="detail-view" class="hidden max-w-5xl mx-auto pb-12 w-full">
+                <button onclick="showGrid()" class="mb-6 px-4 py-2 border dyn-border-active text-sm">&lt; RETURN</button>
+                <article class="dyn-glow-box p-5 md:p-8">
+                    <header class="border-b dyn-border pb-4 mb-6">
+                        <h2 id="detail-title" class="text-3xl font-vt323 uppercase mb-2 text-[var(--text-main)] dyn-glow-text"></h2>
+                        <p id="detail-category" class="text-[10px] opacity-70 tracking-widest uppercase"></p>
+                    </header>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div id="detail-content" class="space-y-6 text-sm"></div>
+                        <aside>
+                            <div class="border dyn-border p-3 dyn-bg-sidebar mb-6">
+                                <h3 class="text-[10px] border-b dyn-border pb-1 mb-2 font-bold flex justify-between tracking-widest">
+                                    <span>VISUAL DATA LOG</span>
+                                    <span class="opacity-50">REC</span>
+                                </h3>
+                                <div class="img-container img-scanlines h-48 sm:h-64 border dyn-border">
+                                    <img id="detail-visual" src="" alt="Archival Document" class="crt-img" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' fill=\'black\'/><text x=\'50\' y=\'50\' fill=\'%2339ff14\' font-family=\'monospace\' font-size=\'8\' text-anchor=\'middle\'>IMAGE RENDER FAILED</text></svg>'">
+                                </div>
+                                <p id="detail-caption" class="text-[10px] opacity-70 mt-2 font-mono uppercase"></p>
+                            </div>
+                            
+                            <h3 class="text-xs font-bold mb-2 opacity-80 uppercase tracking-widest">Related Files:</h3>
+                            <div id="detail-related" class="flex flex-wrap gap-2 mb-6"></div>
+                            
+                            <h3 class="text-xs font-bold mb-2 opacity-80 uppercase tracking-widest border-t dyn-border pt-4">Sourced Documentation:</h3>
+                            <ul id="detail-sources" class="text-[10px] space-y-2 opacity-70 list-disc list-inside"></ul>
+                        </aside>
+                    </div>
+                </article>
+            </div>
+
+            <!-- Network Graph View (Hidden initially) -->
+            <div id="network-view" class="hidden flex flex-col h-full w-full">
+                <div class="flex flex-col md:flex-row gap-4 mb-4 h-full">
+                    <!-- Graph Nav & Info -->
+                    <div class="w-full md:w-1/3 flex flex-col gap-4">
+                        <div class="dyn-glow-box p-4 border dyn-border">
+                            <h2 class="font-vt323 text-2xl text-[var(--text-main)] mb-2">SIGNAL PATH MAPPING</h2>
+                            <p class="text-xs opacity-80 mb-4">A Signal Path traces how a frequency, spiritual word, or data packet moves through hardware, realms, and entities.</p>
+                            <div class="space-y-2" id="graph-controls">
+                                <button onclick="renderGraph('path1')" class="w-full text-left px-2 py-1 text-[10px] border dyn-border hover:bg-[var(--text-main)] uppercase">[PATH 1] Frequency of Chaos</button>
+                                <button onclick="renderGraph('path2')" class="w-full text-left px-2 py-1 text-[10px] border dyn-border hover:bg-[var(--text-main)] uppercase">[PATH 2] VR Thin Places</button>
+                                <button onclick="renderGraph('path3')" class="w-full text-left px-2 py-1 text-[10px] border dyn-border hover:bg-[var(--text-main)] uppercase">[PATH 3] Cymatic Weapons</button>
+                                <button onclick="renderGraph('path4')" class="w-full text-left px-2 py-1 text-[10px] border dyn-border hover:bg-[var(--text-main)] uppercase">[PATH 4] GATE Entrainment</button>
+                                <button onclick="renderGraph('path5')" class="w-full text-left px-2 py-1 text-[10px] border dyn-border hover:bg-[var(--text-main)] uppercase">[PATH 5] Biblical Signal</button>
+                                <button onclick="renderGraph('path6')" class="w-full text-left px-2 py-1 text-[10px] border dyn-border hover:bg-[var(--text-main)] uppercase">[PATH 6] Character Nodes</button>
+                            </div>
+                        </div>
+                        <div class="dyn-glow-box p-4 border dyn-border flex-1">
+                            <h3 id="graph-title" class="font-vt323 text-xl text-[var(--text-main)] mb-2 uppercase"></h3>
+                            <p id="graph-theme" class="text-[10px] text-[var(--accent-red)] mb-2 uppercase tracking-widest font-bold"></p>
+                            <div id="graph-desc" class="text-xs opacity-90 space-y-2 leading-relaxed"></div>
+                        </div>
+                    </div>
+                    <!-- D3 SVG Container -->
+                    <div class="w-full md:w-2/3 h-[50vh] md:h-full border dyn-border dyn-glow-box dyn-bg-sidebar relative" id="d3-container">
+                        <div class="absolute top-2 left-2 text-[10px] opacity-50 font-mono tracking-widest z-10 pointer-events-none">VISUALIZING NODES...</div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <script>
+        // Master Database Array
+        const database = [
+            // OPTICS
+            { id: "kilner", category: "OPTICS", title: "Kilner-Dicyanin Protocol", snippet: "Shifting ocular spectrum via dye screens.", realScience: "In 1911, Dr. Walter John Kilner utilized 'Kilner Screens' filled with dicyanin (a blue coal-tar dye) to shift human eye sensitivity further into the ultraviolet spectrum, allowing the perception of electromagnetic fields or 'auras'.", canon: "The VR lenses are physical filters, not digital renderers. By modifying high-index glass and applying a dicyanin-equivalent coating, the kids bypass digital simulation. The lenses physically shift the user's optical spectrum to process 4th-dimensional light-data.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Kirlian_Photography_of_a_Coin.jpg/640px-Kirlian_Photography_of_a_Coin.jpg", caption: "Fig 1. Electromagnetic discharge under specialized optics.", sources: ["The Human Atmosphere by W. Kilner (1911)"], related: ["tandy", "elisha"] },
+            { id: "tandy", category: "OPTICS", title: "Tandy Resonant Frequencies", snippet: "18.98 Hz infrasound and ocular resonance.", realScience: "Researcher Vic Tandy (1998) found that 18.98 Hz infrasound perfectly resonates with the human eyeball. The vibration of the ocular fluid causes optical illusions, dread, and a sense of 'presence'.", canon: "Tandy's data was accurate, but his conclusion was flawed. The 18.98 Hz frequency doesn't cause hallucination; it physically 'tunes' the ocular fluid, aligning human vision with the baseline frequency of the astral realm. The frequency simply provides the biological bandwidth to see entities already occupying physical space.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Sine_wave_showing_amplitude_and_wavelength.svg/640px-Sine_wave_showing_amplitude_and_wavelength.svg.png", caption: "Fig 2. Infrasound standing wave propagation.", sources: ["Ghosts in the Machine (Journal of SPR)"], related: ["kilner", "beasts"] },
+
+            // ACOUSTICS
+            { id: "ebs", category: "ACOUSTICS", title: "960 Hz FCC Attention Signal", snippet: "Weaponization of the national emergency signal.", realScience: "In 1976, the FCC replaced the CONELRAD warning system with a dual-tone attention signal (853 Hz and 960 Hz) for the Emergency Broadcast System, designed to force immediate psychological attention.", canon: "Raymond Rothenberg utilizes this nationwide grid as a 'Quantum Drill.' By overriding regional switching networks, he blasts a maximum-amplitude acoustic surge of 960 Hz to keep the boundaries of reality permanently softened, preparing to breach the 1979 temporal lock.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Radio_mast_at_night.jpg/640px-Radio_mast_at_night.jpg", caption: "Fig 3. Broadcast transmission tower array.", sources: ["FCC 1976 Implementation Guidelines"], related: ["midnight", "cannon", "beasts"] },
+            { id: "cymatics", category: "ACOUSTICS", title: "Cymatic Lithotripsy", snippet: "Destabilizing entropic matter via acoustics.", realScience: "Cymatics is the visualization of sound frequencies organizing matter into geometric shapes. Burst Wave Lithotripsy uses targeted acoustic pulses to physically shatter kidney stones.", canon: "Shadow Beasts are made of entropic static. Derrick’s heavy bass frequencies act as weaponized cymatics. By blasting hyper-amplified chords, the team forces the chaotic matter into rigid crystal structures (Cymatic Locking), then shatters them completely using targeted acoustic pulse waves.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Chladni_plate_2.jpg/640px-Chladni_plate_2.jpg", caption: "Fig 4. Sand organizing under harmonic resonance (Chladni Plate).", sources: ["Ernst Chladni Acoustic Observations", "Hans Jenny Documentation"], related: ["beasts", "cannon", "kuramoto"] },
+            { id: "kuramoto", category: "ACOUSTICS", title: "Kuramoto Coherence Model", snippet: "Heart/brain/social phase synchronization.", realScience: "The Kuramoto model is a mathematical framework used to describe synchronization. Real-world HeartMath research suggests that when humans achieve physiological coherence (heart/brain sync), they generate a measurable, unified electromagnetic signal.", canon: "The Resonance Cannon requires absolute phase alignment to operate. Robbie's crew succeeds because they achieve 'Uncorrupted Collective Coherence.' Their deep, self-sacrificial fellowship creates a unified psychological and spiritual signal, turning their bodies into a living acoustic array.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Kuramoto_model.gif/640px-Kuramoto_model.gif", caption: "Fig 5. Phase oscillators aligning to a unified rhythm.", sources: ["Kuramoto Synchronization Models", "Institute of HeartMath"], related: ["cymatics", "cannon", "genesis"] },
+
+            // QUANTUM
+            { id: "loop", category: "QUANTUM", title: "Macroscopic Entanglement", snippet: "Bridging physical motors with virtual HUD dials.", realScience: "Quantum entanglement is a phenomenon where particles interact such that the state of each cannot be described independently. Advancements explore scaling this to 'macroscopic' levels, entangling larger, visible systems.", canon: "Using a localized entanglement field created by Cassie's math, the physical arcade servo-motors wired to the basement workbench (Side A) are entangled with the virtual dials in Robbie's VR HUD (Side B). When Robbie turns the spectral dial in the spirit realm, the physical dial in the real world rotates in perfect synchronization.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Spontaneous_parametric_down-conversion.png/640px-Spontaneous_parametric_down-conversion.png", caption: "Fig 6. Particle entanglement schematic.", sources: ["Macroscopic Quantum Phenomena"], related: ["nexus", "sutherland"] },
+            { id: "coherence", category: "QUANTUM", title: "Quantum Coherence", snippet: "Stabilizing the gateway to prevent wave-decay.", realScience: "Quantum coherence refers to the precise maintenance of a well-defined phase relationship within a quantum system, which is required to prevent the system from decaying into classical, entropic noise.", canon: "This is the missing formula RAEtron failed to crack. Raymond used brute-force electricity, which immediately caused destructive decoherence and collapsed the portal. Robbie's team unwittingly achieved true 'Uncorrupted Collective Coherence' by using precise Solfeggio sound frequencies and localized EM lenses to lock the portal open safely.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Double-slit_experiment_results_Tanamura_two_slit_interference.jpg/640px-Double-slit_experiment_results_Tanamura_two_slit_interference.jpg", caption: "Fig 7. Coherent interference pattern stabilization.", sources: ["Quantum Coherence and Decay Models"], related: ["beasts", "kuramoto"] },
+
+            // CONSPIRACY
+            { id: "gateway", category: "CONSPIRACY", title: "The Gateway Process (CIA)", snippet: "1983 Declassified CIA documents on astral projection.", realScience: "In 1983, the US Army authored a classified report for the CIA regarding the 'Gateway Experience'. It detailed altering brainwaves through Hemi-Sync audio to achieve altered states of consciousness, essentially proving astral projection as an objective reality.", canon: "Dr. Alexander Stevens originally consulted on the CIA's Gateway project. He walked away when he realized they were missing the crucial spiritual component—The True Signal. Without Solfeggio frequency anchors, projecting consciousness left subjects completely vulnerable to Decoherent Entities.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Electroencephalogram.jpg/640px-Electroencephalogram.jpg", caption: "Fig 8. Brainwave entrainment (Hemi-Sync) data.", sources: ["CIA Reading Room: RDP96-00788R001700210016-5"], related: ["elisha", "nexus", "gate"] },
+            { id: "midnight", category: "CONSPIRACY", title: "Captain Midnight Hijack", snippet: "The 1986 HBO satellite hijack as a grid test.", realScience: "On April 27, 1986, electrical engineer John MacDougall hijacked HBO's satellite signal under the pseudonym 'Captain Midnight,' broadcasting a text overlay complaining about subscription rates to half the Eastern seaboard.", canon: "MacDougall was a patsy. The HBO hijack was actually a covert stress-test conducted by Raymond Rothenberg. The 'Captain Midnight' text was merely a visual distraction while Raymond tested injecting the 960 Hz sub-harmonic carrier wave into national network audio.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/SMPTE_Color_Bars.svg/640px-SMPTE_Color_Bars.svg.png", caption: "Fig 9. Satellite broadcast override visual.", sources: ["FCC Broadcast Incident Logs (April 1986)"], related: ["ebs"] },
+            { id: "gate", category: "CONSPIRACY", title: "GATE Program Dragnet", snippet: "Harvesting student brain maps for FFT analysis.", realScience: "The Gifted and Talented Education (GATE) program identifies highly intelligent students. Fast Fourier Transform (FFT) is an algorithm that breaks down complex signals, like brainwaves, into their constituent frequencies.", canon: "Raymond doesn’t fund the GATE program for philanthropy; he uses it as a dragnet to collect hidden brain maps of high-IQ kids. RAEtron runs FFT analysis on those maps, looking for 'Neural Phase Coherence' with Sonny’s 1979 breach signature. Jayendra ends up being the perfect biological resonance match.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/FFT_of_a_sine_wave.svg/640px-FFT_of_a_sine_wave.svg.png", caption: "Fig 10. Fast Fourier Transform frequency isolation.", sources: ["RAEtron Internal Educational Initiatives"], related: ["jay", "sonny", "gateway"] },
+
+            // HARDWARE
+            { id: "sutherland", category: "HARDWARE", title: "Ultimate Display", snippet: "The 1965 theoretical model of a materialized room.", realScience: "In 1965, Ivan Sutherland published 'The Ultimate Display,' theorizing a room where a computer controls the existence of matter: 'A bullet displayed in such a room would be fatal.' He subsequently built 'The Sword of Damocles,' the first VR headset.", canon: "Dr. Stevens realized hardware could be tuned to pierce an *existing* reality rather than simulate one. The 1979 HyperRealm Nexus was Stevens' attempt to build the literal 'Ultimate Display' by physically bridging into the 4th-dimensional astral plane.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Ivan_Sutherland_using_TX-2.jpg/640px-Ivan_Sutherland_using_TX-2.jpg", caption: "Fig 11. Early immersive computational architecture.", sources: ["The Ultimate Display (1965)"], related: ["nexus", "loop"] },
+            { id: "nexus", category: "HARDWARE", title: "HyperRealm Nexus", snippet: "Dr. Stevens' dormant 1979 magnum opus.", realScience: "Early VR development relied on massive, room-filling mainframes and heavy ceiling-mounted suspension rigs to process crude graphics.", canon: "Following Sutherland's footsteps, Dr. Stevens built The HyperRealm Nexus to interface with the actual dimensional fabric. Left dormant after Stevens vanished, the massive relic sat in a Queens basement until Robbie's project accidentally hit the correct sub-harmonic resonance.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/IBM_System_360_Model_50_Mainframe_Computer_%2814881023719%29.jpg/640px-IBM_System_360_Model_50_Mainframe_Computer_%2814881023719%29.jpg", caption: "Fig 12. 1970s mainframe hardware architecture.", sources: ["Project Coherence Incident Log (1979)"], related: ["sutherland", "gateway"] },
+            { id: "cannon", category: "HARDWARE", title: "Resonance Cannon", snippet: "Weaponized acoustic burst waves (Static Shredder).", realScience: "Acoustic metamaterials can be designed to control and direct sound waves into highly pressurized beams of kinetic energy, capable of destabilizing physical matter.", canon: "Rewired from Stevens' hidden 1979 prototype using thick coaxial shielding and car stereo filters scavenged from RadioShack. Bridged directly into Robbie's shortwave matrix and powered by Derrick's guitar, the weapon fires a targeted acoustic shatter-wave.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Megaphone_illustration.jpg/640px-Megaphone_illustration.jpg", caption: "Fig 13. Acoustic horn amplification schematic.", sources: ["Stevens' Blueprints", "Acoustic Metamaterials"], related: ["ebs", "cymatics"] },
+            { id: "tesla", category: "HARDWARE", title: "Spirit Radios", snippet: "Tuning into the EM static of the afterlife.", realScience: "Nikola Tesla and Thomas Edison theorized 'Spirit Radios'. They believed the afterlife wasn't a physical place, but a frequency humans were simply out of tune with, using VLF radio waves as carrier signals.", canon: "Tesla and Edison were building early threshold devices. Robbie's transistor shortwave radio acts as a miniaturized version, scanning the spectral layers of the atmosphere to locate the precise resonance of the HyperRealm.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Tesla_colorado_adjusted.jpg/640px-Tesla_colorado_adjusted.jpg", caption: "Fig 14. Early high-voltage frequency resonance.", sources: ["Tesla's 1901 Laboratory Notes"], related: ["ebs", "nexus"] },
+
+            // DIMENSIONAL
+            { id: "elisha", category: "DIMENSIONAL", title: "The Elisha Protocol", snippet: "Biblical supernatural worldview vs. Flatland physics.", realScience: "Dr. Carl Sagan popularized the 'Flatland' analogy to explain the 4th dimension. A 2D square cannot comprehend a 3D apple passing through its world. A 4D object interacting with our 3D world appears as a morphing, incomprehensible shape.", canon: "This mathematical model explains the Biblical worldview. In 2 Kings 6:17, Elisha prays for his servant's eyes to be opened to see the 'chariots of fire'. The unseen armies occupy the 4D astral space. The VR lenses act as a mechanical version of Elisha's prayer.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Tesseract.gif/640px-Tesseract.gif", caption: "Fig 15. Hypercube (Tesseract) 3D projection.", sources: ["2 Kings 6:17", "Cosmos (Sagan)"], related: ["kilner", "beasts", "genesis"] },
+            { id: "genesis", category: "DIMENSIONAL", title: "Tohu va-bohu (Signal)", snippet: "God as the Architect of Frequency.", realScience: "The Hebrew phrase 'Tohu va-bohu' from Genesis 1:2 describes the earth as 'formless and void' (chaos) before God spoke light and order into existence through spoken word (sound/frequency).", canon: "The physical world is a holographic canvas held together by a baseline frequency of absolute order—the spoken word of the Creator, termed 'The True Signal'. The spaces outside this signal are filled with raw, chaotic noise.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/NASA_Microwave_Anisotropy_Probe.jpg/640px-NASA_Microwave_Anisotropy_Probe.jpg", caption: "Fig 16. Cosmic microwave background radiation (Static).", sources: ["Genesis 1:2", "Ephesians 6:12"], related: ["elisha", "beasts"] },
+
+            // ENTITIES
+            { id: "beasts", category: "ENTITIES", title: "Decoherent Entities", snippet: "The manifestation of raw cosmic static and entropy.", realScience: "In physics, 'quantum decoherence' is the loss of coherence due to interacting with chaotic environmental 'noise'. Entropy is the thermodynamic principle that all systems gradually decline into disorder.", canon: "The Shadow Beasts are not biological monsters; they are Decoherent Entities born out of cosmic static (the biblical 'outer darkness'). They cannot create; they can only consume and deconstruct the geometric order of our physical world.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Television_static.jpg/640px-Television_static.jpg", caption: "Fig 17. Absolute entropic signal degradation.", sources: ["Physics of Entropy", "Ephesians 6:12"], related: ["cymatics", "genesis", "ebs"] },
+
+            // PERSONNEL
+            { id: "robbie", category: "PERSONNEL", title: "Robbie", snippet: "Hardware & Interface Lead", realScience: "Primary operator of the localized 4D nexus interface.", canon: "Driven by a need to prove himself, Robbie engineers the physical-to-virtual loop. His shortwave transistor radio is the anchor point for the entire frequency hack. He starts searching for a science fair trophy but ends up fighting a spiritual war.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Teenager_playing_an_arcade_game_%281982%29.jpg/640px-Teenager_playing_an_arcade_game_%281982%29.jpg", caption: "FILE: ROBBIE // HUBRIS_PROTOCOL", sources: ["Project Coherence Attendance Logs"], related: ["nexus", "loop", "tesla"] },
+            { id: "cassie", category: "PERSONNEL", title: "Cassie", snippet: "Optics & Dimensional Theory", realScience: "Applied physics and optical engineering specialist.", canon: "The analytical anchor of the team. Cassie harvests high-index glass from rear-projection TVs, applying dicyanin protocols to build lenses capable of piercing the Veil. Her reliance on thermodynamics is shattered by the spiritual reality of the beasts.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Woman_working_at_computer_terminal_-_1980s.jpg/640px-Woman_working_at_computer_terminal_-_1980s.jpg", caption: "FILE: CASSIE // OPTICAL_RESONANCE", sources: ["Project Coherence Attendance Logs"], related: ["kilner", "sutherland", "elisha"] },
+            { id: "derrick", category: "PERSONNEL", title: "Derrick", snippet: "Acoustics & Phase Cancellation", realScience: "Cymatics and sub-harmonic frequency generation.", canon: "Derrick uses heavy basslines and audio loops to inadvertently strike the 960 Hz sub-harmonic that jump-starts the 1979 Nexus. He later weaponizes his music, using the Resonance Cannon to phase-cancel and shatter the Shadow Beasts.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/DJ_Kool_Herc.jpg/640px-DJ_Kool_Herc.jpg", caption: "FILE: DERRICK // CYMATIC_LOCK", sources: ["Project Coherence Attendance Logs"], related: ["cymatics", "cannon", "ebs"] },
+            { id: "shelby", category: "PERSONNEL", title: "Shelby", snippet: "Communications & Espionage", realScience: "Data interception and Bell Labs infrastructure manipulation.", canon: "The street-smart hacker. Shelby traces her father's connections back to RAEtron and Bell Labs. She identifies the Captain Midnight hack as a corporate cover-up and recognizes the danger of Raymond's 960 Hz EBS override.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Woman_using_a_microfiche_reader.jpg/640px-Woman_using_a_microfiche_reader.jpg", caption: "FILE: SHELBY // SIGNAL_INTERCEPT", sources: ["Project Coherence Attendance Logs"], related: ["midnight", "ebs"] },
+            { id: "jay", category: "PERSONNEL", title: "Jayendra (Jay)", snippet: "Biological Resonance Match", realScience: "FFT brainwave anomaly and neural phase coherence.", canon: "Sourced through the GATE program, Jay possesses a unique brain map that perfectly aligns with Sonny's 1979 breach signature. Raymond attempts to manipulate Jay's ambition to use him as a biological tuning fork for Harmonic Entrainment.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Student_at_a_computer_in_1981.jpg/640px-Student_at_a_computer_in_1981.jpg", caption: "FILE: JAY // NEURAL_ANCHOR", sources: ["GATE Program Medical Files"], related: ["gate", "sonny"] },
+            { id: "sonny", category: "PERSONNEL", title: "Sonny Rothenberg", snippet: "The 1979 Lost Variable", realScience: "Displaced consciousness trapped in quantum superposition.", canon: "Raymond's brother, trapped in the cosmic static during the original 1979 breach. His unique waveform signature is the target of RAEtron's massive EBS broadcast grid. The ultimate goal is not to kill him, but to guide him to eternal rest.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Male_student_at_desk_%28circa_1970s%29.jpg/640px-Male_student_at_desk_%28circa_1970s%29.jpg", caption: "FILE: SONNY // 1979_ANOMALY", sources: ["Classified RAEtron Archives"], related: ["nexus", "ebs", "gate"] },
+            { id: "vince", category: "PERSONNEL", title: "Vince", snippet: "Tactical Defense & Physical Anchor", realScience: "In high-stress electrical and quantum environments, a physical fail-safe or 'ground' is required to break catastrophic feedback loops.", canon: "Vince serves as the fellowship's flesh-and-blood anchor. When the gateway red-lines, he uses raw physical force to shatter the hardware, breaking the localized entanglement and dropping the team safely back into their bodies. His sacrificial actions embody the core protective light that repels the Shadow Beasts.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/1980s_leather_jacket.jpg/640px-1980s_leather_jacket.jpg", caption: "FILE: VINCE // PHYSICAL_FAILSAFE", sources: ["Project Coherence Attendance Logs", "Juvenile Hall Intake Records"], related: ["beasts", "nexus"] },
+            { id: "josie", category: "PERSONNEL", title: "Josie", snippet: "Virtual Architecture & Visual Rendering", realScience: "The human brain requires familiar geometric architecture to process higher-dimensional or non-Euclidean data without slipping into psychological shock.", canon: "Josie translates the raw, chaotic static of the 4th dimension into comprehensible visual renderings for the VR environment. Battling her own internal fears stemming from a troubled home life, she holds the emotional line, mapping the structural coordinates that keep the team grounded.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Computer_graphics_1980s.jpg/640px-Computer_graphics_1980s.jpg", caption: "FILE: JOSIE // SPATIAL_RENDERING", sources: ["Project Coherence Attendance Logs"], related: ["sutherland", "coherence"] },
+            { id: "raymond", category: "PERSONNEL", title: "Raymond Rothenberg", snippet: "RAEtron CEO & Primary Antagonist", realScience: "Corporate exploitation of fringe science, utilizing massive capital to brute-force technological breakthroughs regardless of ethical boundaries.", canon: "Driven by desperate fraternal love for his trapped brother Sonny, Raymond operates behind a mask of philanthropy. He uses the GATE program to harvest brain-maps, seeking a biological tuning fork (Jay) to force a high-amplitude wave-function collapse via the nationwide EBS grid.", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Corporate_executive_1980s.jpg/640px-Corporate_executive_1980s.jpg", caption: "FILE: R. ROTHENBERG // DIRECTOR_RAETRON", sources: ["RAEtron Executive Manifest", "Classified Bell Labs Communications"], related: ["sonny", "ebs", "gate"] }
+        ];
+
+        // Signal Path Network Data
+        const pathsData = {
+            path1: {
+                title: "Path 1: Frequency of Chaos",
+                theme: "How civil-defense tones become a bridge for decoherent entities.",
+                desc: "Traces the weaponization of the 1976 EBS attention signal. Raymond Rothenberg exploits the 960 Hz tone, utilizing the Bell Labs infrastructure to pump a 'vibrational solvent' into American homes, thinning the Veil and allowing Shadow Beasts to cross over.",
+                nodes: [
+                    { id: "Bell Labs", group: "corp" }, { id: "EBS 960Hz", group: "tech" },
+                    { id: "Living Rooms", group: "human" }, { id: "Shadow Beasts", group: "entity" },
+                    { id: "Raymond", group: "person" }, { id: "HyperRealm Nexus", group: "tech" }
+                ],
+                links: [
+                    { source: "Bell Labs", target: "EBS 960Hz", label: "Designs Tone" },
+                    { source: "Raymond", target: "EBS 960Hz", label: "Exploits" },
+                    { source: "EBS 960Hz", target: "Living Rooms", label: "Broadcasts Solvent" },
+                    { source: "EBS 960Hz", target: "Shadow Beasts", label: "Feeds Chaos" },
+                    { source: "EBS 960Hz", target: "HyperRealm Nexus", label: "Synchronizes" },
+                    { source: "Shadow Beasts", target: "Living Rooms", label: "Breaches" }
+                ]
+            },
+            path2: {
+                title: "Path 2: VR as Key to Thin Places",
+                theme: "How VR becomes a mechanical way to match unseen dimensions.",
+                desc: "From Ivan Sutherland's 'Ultimate Display' to Carl Sagan's tesseract. Dr. Stevens builds a machine to align frequencies, realizing reality is a holographic canvas. Robbie and Cassie unknowingly recreate this, creating a two-way tunnel into the astral plane.",
+                nodes: [
+                    { id: "Sutherland's Display", group: "tech" }, { id: "Sagan's 4D", group: "theory" },
+                    { id: "Elisha's Servant", group: "theory" }, { id: "Dr. Stevens", group: "person" },
+                    { id: "HyperRealm Nexus", group: "tech" }, { id: "Cassie/Robbie Rig", group: "tech" },
+                    { id: "Astral Plane", group: "realm" }
+                ],
+                links: [
+                    { source: "Sutherland's Display", target: "Dr. Stevens", label: "Inspires" },
+                    { source: "Sagan's 4D", target: "Elisha's Servant", label: "Explains" },
+                    { source: "Elisha's Servant", target: "Astral Plane", label: "Reveals" },
+                    { source: "Dr. Stevens", target: "HyperRealm Nexus", label: "Builds" },
+                    { source: "Cassie/Robbie Rig", target: "HyperRealm Nexus", label: "Re-creates" },
+                    { source: "HyperRealm Nexus", target: "Astral Plane", label: "Pierces Veil" },
+                    { source: "Cassie/Robbie Rig", target: "Astral Plane", label: "Two-way Tunnel" }
+                ]
+            },
+            path3: {
+                title: "Path 3: Cymatic Weaponry",
+                theme: "How coherence forms a weapon against decoherent Shadow Beasts.",
+                desc: "Cymatics shows that sound organizes matter. Shadow Beasts are decoherent (lost the Signal of Order). The team uses HeartMath coherence to generate a pure signal, firing phased arrays (Burst Waves) through the Resonance Cannon to shatter the beasts.",
+                nodes: [
+                    { id: "Ernst Chladni", group: "theory" }, { id: "Shadow Beasts", group: "entity" },
+                    { id: "Heart Coherence", group: "human" }, { id: "Resonance Cannon", group: "tech" },
+                    { id: "Burst Wave", group: "tech" }, { id: "Derrick", group: "person" }
+                ],
+                links: [
+                    { source: "Ernst Chladni", target: "Resonance Cannon", label: "Basis of" },
+                    { source: "Heart Coherence", target: "Derrick", label: "Empowers" },
+                    { source: "Derrick", target: "Resonance Cannon", label: "Fires" },
+                    { source: "Resonance Cannon", target: "Burst Wave", label: "Generates" },
+                    { source: "Burst Wave", target: "Shadow Beasts", label: "Shatters" },
+                    { source: "Shadow Beasts", target: "Ernst Chladni", label: "Opposes Order" }
+                ]
+            },
+            path4: {
+                title: "Path 4: GATE Entrainment",
+                theme: "How RAEtron uses school data to find a human tuning fork.",
+                desc: "Raymond uses the GATE program to collect brain maps. RAEtron runs FFT analysis to find Neural Phase Coherence with Sonny's 1979 breach signature. Jay becomes the target for forced Harmonic Entrainment.",
+                nodes: [
+                    { id: "Raymond", group: "person" }, { id: "GATE Program", group: "corp" },
+                    { id: "FFT Analysis", group: "tech" }, { id: "Sonny (1979)", group: "entity" },
+                    { id: "Jay", group: "person" }, { id: "Harmonic Entrainment", group: "tech" }
+                ],
+                links: [
+                    { source: "Raymond", target: "GATE Program", label: "Funds/Exploits" },
+                    { source: "GATE Program", target: "FFT Analysis", label: "Provides Maps" },
+                    { source: "FFT Analysis", target: "Jay", label: "Identifies Match" },
+                    { source: "Jay", target: "Sonny (1979)", label: "Neural Mirror" },
+                    { source: "Raymond", target: "Harmonic Entrainment", label: "Forces" },
+                    { source: "Harmonic Entrainment", target: "Jay", label: "Weaponizes Mind" }
+                ]
+            },
+            path5: {
+                title: "Path 5: The Biblical Signal",
+                theme: "How Scripture frames the universe as vibrationally ordered.",
+                desc: "God's spoken word ('The True Signal') brought order to the Genesis chaos (Tohu va-bohu). Ephesians 6 maps exactly to the Shadow Beasts. The 'misfits' become Davids, using faith and resonance to push back the static.",
+                nodes: [
+                    { id: "The True Signal", group: "theory" }, { id: "Tohu va-bohu", group: "theory" },
+                    { id: "Ephesians 6:12", group: "theory" }, { id: "Shadow Beasts", group: "entity" },
+                    { id: "The Misfits", group: "human" }, { id: "Elisha's Eyes", group: "theory" }
+                ],
+                links: [
+                    { source: "The True Signal", target: "Tohu va-bohu", label: "Organizes Chaos" },
+                    { source: "Tohu va-bohu", target: "Shadow Beasts", label: "Births" },
+                    { source: "Ephesians 6:12", target: "Shadow Beasts", label: "Identifies" },
+                    { source: "The Misfits", target: "The True Signal", label: "Wields Authority" },
+                    { source: "The Misfits", target: "Shadow Beasts", label: "Pushes Back" },
+                    { source: "Elisha's Eyes", target: "The True Signal", label: "Perceives" }
+                ]
+            },
+            path6: {
+                title: "Path 6: Character Signal Intersections",
+                theme: "Mapping the primary signal nodes for the main cast.",
+                desc: "A character-centric view showing how Robbie, Cassie, Shelby, Derrick, Jay, Sonny, Vince, Josie, and Raymond anchor the intersecting paths of optics, acoustics, entanglement, and the corporate dragnet.",
+                nodes: [
+                    { id: "Robbie", group: "person" }, { id: "Cassie", group: "person" },
+                    { id: "Derrick", group: "person" }, { id: "Shelby", group: "person" },
+                    { id: "Jay", group: "person" }, { id: "Sonny", group: "entity" },
+                    { id: "Vince", group: "person" }, { id: "Josie", group: "person" },
+                    { id: "Raymond", group: "person" },
+                    { id: "Transistor Radio", group: "tech" }, { id: "Optics / VR", group: "tech" },
+                    { id: "Phase Audio", group: "tech" }, { id: "Bell Labs Data", group: "corp" },
+                    { id: "Brain Map", group: "human" }, { id: "Physical Anchor", group: "tech" },
+                    { id: "EBS Override", group: "tech" }
+                ],
+                links: [
+                    { source: "Robbie", target: "Transistor Radio", label: "Controls" },
+                    { source: "Cassie", target: "Optics / VR", label: "Engineers" },
+                    { source: "Derrick", target: "Phase Audio", label: "Weapons" },
+                    { source: "Shelby", target: "Bell Labs Data", label: "Intercepts" },
+                    { source: "Jay", target: "Brain Map", label: "Target" },
+                    { source: "Sonny", target: "Transistor Radio", label: "Lost Inside" },
+                    { source: "Jay", target: "Sonny", label: "Frequency Match" },
+                    { source: "Vince", target: "Physical Anchor", label: "Defends/Breaks" },
+                    { source: "Josie", target: "Optics / VR", label: "Designs UI" },
+                    { source: "Raymond", target: "Brain Map", label: "Exploits" },
+                    { source: "Raymond", target: "EBS Override", label: "Triggers" }
+                ]
+            }
+        };
+
+        // UI & Theme Logic
+        window.isPrintMode = false;
+
+        function toggleTheme() {
+            window.isPrintMode = !window.isPrintMode;
+            const body = document.getElementById('app-body');
+            const btn = document.getElementById('theme-btn');
+            
+            if (window.isPrintMode) {
+                body.classList.add('theme-print');
+                body.classList.remove('scanlines');
+                btn.innerText = "[ SWAP TO CRT TERMINAL ]";
+            } else {
+                body.classList.remove('theme-print');
+                body.classList.add('scanlines');
+                btn.innerText = "[ SWAP TO PRINT MODE ]";
+            }
+            
+            // Re-render D3 graph if visible to update colors
+            if(!document.getElementById('network-view').classList.contains('hidden')){
+                const activePath = document.querySelector('#graph-controls button.nav-active');
+                if(activePath) activePath.click();
+            }
+        }
+
+        function filterData(category) {
+            document.getElementById('manifesto').classList.toggle('hidden', category !== 'ALL');
+            document.getElementById('grid-view').classList.remove('hidden');
+            document.getElementById('detail-view').classList.add('hidden');
+            document.getElementById('network-view').classList.add('hidden');
+            
+            document.querySelectorAll('#nav-menu button').forEach(b => {
+                b.classList.toggle('nav-active', b.getAttribute('data-filter') === category);
+            });
+            
+            renderGrid(category);
+        }
+
+        function renderGrid(category) {
+            const grid = document.getElementById('grid-view');
+            grid.innerHTML = '';
+            const filtered = category === 'ALL' ? database : database.filter(item => item.category === category);
+            
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "dyn-glow-box p-4 cursor-pointer hover:scale-[1.02] transition-transform flex flex-col";
+                card.onclick = () => showDetail(item.id);
+                card.innerHTML = `
+                    <span class="text-[10px] mb-2 border-b dyn-border pb-1 opacity-70">${item.category}</span>
+                    <h3 class="font-vt323 text-xl md:text-2xl mb-2 text-[var(--text-main)]">${item.title}</h3>
+                    <p class="text-xs opacity-80 text-[var(--text-main)]">${item.snippet}</p>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function showDetail(id) {
+            const item = database.find(i => i.id === id);
+            document.getElementById('grid-view').classList.add('hidden');
+            document.getElementById('manifesto').classList.add('hidden');
+            document.getElementById('network-view').classList.add('hidden');
+            document.getElementById('detail-view').classList.remove('hidden');
+            
+            document.getElementById('content-scroll').scrollTop = 0;
+            window.scrollTo(0,0);
+            
+            document.getElementById('detail-title').innerText = item.title;
+            document.getElementById('detail-category').innerText = `CAT: ${item.category} // FILE_ID: ${item.id}`;
+            document.getElementById('detail-visual').src = item.image;
+            document.getElementById('detail-caption').innerText = item.caption;
+
+            document.getElementById('detail-content').innerHTML = `
+                <div class="mb-6">
+                    <h3 class="text-sm font-bold border-b dyn-border pb-1 mb-2 tracking-widest">[ REALITY BASELINE ]</h3>
+                    <p class="opacity-90 leading-relaxed text-[var(--text-main)]">${item.realScience}</p>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-[var(--accent-red)] border-b border-[var(--accent-red)] pb-1 mb-2 tracking-widest">[ CANON APPLICATION ]</h3>
+                    <p class="opacity-90 leading-relaxed text-[var(--text-main)]">${item.canon}</p>
+                </div>
+            `;
+            
+            const relList = document.getElementById('detail-related');
+            relList.innerHTML = item.related.map(rId => {
+                const r = database.find(i => i.id === rId);
+                return r ? `<button onclick="showDetail('${rId}')" class="text-[10px] border dyn-border dyn-bg-sidebar px-2 py-1 uppercase tracking-widest hover:border-[var(--border-active)]">${r.title}</button>` : '';
+            }).join('');
+            
+            document.getElementById('detail-sources').innerHTML = item.sources.map(s => `<li>${s}</li>`).join('');
+        }
+
+        function showGrid() {
+            document.getElementById('network-view').classList.add('hidden');
+            document.getElementById('grid-view').classList.remove('hidden');
+            document.getElementById('detail-view').classList.add('hidden');
+            document.getElementById('manifesto').classList.remove('hidden');
+            
+            document.querySelectorAll('#nav-menu button').forEach(b => b.classList.remove('nav-active'));
+            document.querySelector('[data-filter="ALL"]').classList.add('nav-active');
+            
+            document.getElementById('content-scroll').scrollTop = 0;
+            window.scrollTo(0,0);
+        }
+
+        // --- D3 Network Graph Logic ---
+        function showNetworkGraph() {
+            document.getElementById('grid-view').classList.add('hidden');
+            document.getElementById('detail-view').classList.add('hidden');
+            document.getElementById('manifesto').classList.add('hidden');
+            document.getElementById('network-view').classList.remove('hidden');
+            
+            document.querySelectorAll('#nav-menu button').forEach(b => b.classList.remove('nav-active'));
+            document.getElementById('nav-network').classList.add('nav-active');
+            
+            // Render first path by default
+            renderGraph('path1');
+        }
+
+        function renderGraph(pathKey) {
+            // Update Active Nav
+            document.querySelectorAll('#graph-controls button').forEach(b => b.classList.remove('bg-[var(--text-main)]', 'text-[var(--bg-main)]'));
+            const activeBtn = document.querySelector(`button[onclick="renderGraph('${pathKey}')"]`);
+            if(activeBtn) activeBtn.classList.add('bg-[var(--text-main)]', 'text-[var(--bg-main)]');
+
+            const data = pathsData[pathKey];
+            document.getElementById('graph-title').innerText = data.title;
+            document.getElementById('graph-theme').innerText = data.theme;
+            document.getElementById('graph-desc').innerText = data.desc;
+
+            const container = document.getElementById('d3-container');
+            container.innerHTML = '<div class="absolute top-2 left-2 text-[10px] opacity-50 font-mono tracking-widest z-10 pointer-events-none">VISUALIZING NODES...</div>';
+            
+            const width = container.clientWidth;
+            const height = container.clientHeight || 400; // fallback for mobile
+
+            const svg = d3.select("#d3-container")
+                .append("svg")
+                .attr("viewBox", [0, 0, width, height])
+                .attr("width", "100%")
+                .attr("height", "100%");
+
+            // D3 Colors mapped to CSS Variables
+            const colorMap = {
+                "corp": "var(--text-dim)",
+                "tech": "var(--text-main)",
+                "human": "var(--accent-blue)",
+                "entity": "var(--accent-red)",
+                "person": "var(--text-main)",
+                "theory": "var(--text-dim)",
+                "realm": "var(--accent-red)"
+            };
+
+            const simulation = d3.forceSimulation(data.nodes)
+                .force("link", d3.forceLink(data.links).id(d => d.id).distance(120))
+                .force("charge", d3.forceManyBody().strength(-400))
+                .force("center", d3.forceCenter(width / 2, height / 2));
+
+            // Links
+            const link = svg.append("g")
+                .selectAll("line")
+                .data(data.links)
+                .join("line")
+                .attr("class", "link");
+
+            // Link Labels
+            const linkText = svg.append("g")
+                .selectAll("text")
+                .data(data.links)
+                .join("text")
+                .attr("fill", "var(--text-main)")
+                .attr("font-size", "8px")
+                .attr("font-family", "monospace")
+                .attr("opacity", "0.7")
+                .attr("text-anchor", "middle")
+                .text(d => d.label);
+
+            // Nodes
+            const node = svg.append("g")
+                .selectAll("circle")
+                .data(data.nodes)
+                .join("circle")
+                .attr("r", 8)
+                .attr("fill", "var(--bg-main)")
+                .attr("stroke", d => colorMap[d.group] || "var(--text-main)")
+                .attr("stroke-width", 2)
+                .call(drag(simulation));
+
+            // Node Labels
+            const label = svg.append("g")
+                .selectAll("text")
+                .data(data.nodes)
+                .join("text")
+                .attr("class", "node-text")
+                .attr("x", 12)
+                .attr("y", 3)
+                .text(d => d.id);
+
+            simulation.on("tick", () => {
+                link
+                    .attr("x1", d => Math.max(10, Math.min(width - 10, d.source.x)))
+                    .attr("y1", d => Math.max(10, Math.min(height - 10, d.source.y)))
+                    .attr("x2", d => Math.max(10, Math.min(width - 10, d.target.x)))
+                    .attr("y2", d => Math.max(10, Math.min(height - 10, d.target.y)));
+                    
+                linkText
+                    .attr("x", d => (d.source.x + d.target.x) / 2)
+                    .attr("y", d => (d.source.y + d.target.y) / 2 - 4);
+
+                node
+                    .attr("cx", d => d.x = Math.max(10, Math.min(width - 10, d.x)))
+                    .attr("cy", d => d.y = Math.max(10, Math.min(height - 10, d.y)));
+
+                label
+                    .attr("x", d => d.x + 12)
+                    .attr("y", d => d.y + 4);
+            });
+
+            // Drag functionality
+            function drag(simulation) {
+                function dragstarted(event) {
+                    if (!event.active) simulation.alphaTarget(0.3).restart();
+                    event.subject.fx = event.subject.x;
+                    event.subject.fy = event.subject.y;
+                }
+                function dragged(event) {
+                    event.subject.fx = event.x;
+                    event.subject.fy = event.y;
+                }
+                function dragended(event) {
+                    if (!event.active) simulation.alphaTarget(0);
+                    event.subject.fx = null;
+                    event.subject.fy = null;
+                }
+                return d3.drag()
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended);
+            }
+        }
+
+        // Initialize
+        window.onload = () => filterData('ALL');
+    </script>
+</body>
+</html>
