@@ -120,7 +120,7 @@
 
         /* SVG Graph Styling */
         .node circle { stroke: var(--text-main); stroke-width: 2px; transition: all 0.3s; }
-        .node text { fill: var(--text-main); font-family: 'Space Mono', monospace; font-size: 10px; pointer-events: none; }
+        .node-text { fill: var(--text-main); font-family: 'Space Mono', monospace; font-size: 10px; transition: fill 0.3s; }
         .link { stroke: var(--border-active); stroke-opacity: 0.6; stroke-dasharray: 4; }
         .theme-print .link { stroke-dasharray: none; stroke: var(--border-base); }
         .marker-arrow { fill: var(--border-active); }
@@ -153,6 +153,12 @@
         <!-- Sidebar Navigation -->
         <aside class="w-full md:w-64 border-b md:border-b-0 md:border-r dyn-border dyn-bg-sidebar p-3 md:p-4 flex-shrink-0 flex flex-col md:overflow-y-auto">
             <h2 class="text-sm tracking-widest mb-2 md:mb-4 opacity-70 border-b dyn-border pb-1 md:pb-2 font-bold hidden md:block">DATA DIRECTORIES</h2>
+            
+            <!-- Search Bar -->
+            <div class="mb-3 md:mb-4">
+                <input type="text" id="search-input" onkeyup="handleSearch(event)" placeholder="[ SEARCH ARCHIVE... ]" class="w-full bg-[var(--bg-main)] border dyn-border text-[var(--text-main)] text-xs p-2 focus:outline-none focus:border-[var(--border-active)] font-mono placeholder-opacity-50 placeholder-[var(--text-dim)]">
+            </div>
+
             <nav class="flex md:flex-col overflow-x-auto md:overflow-x-visible space-x-2 md:space-x-0 md:space-y-1 pb-2 md:pb-0 scrollbar-hide w-full" id="nav-menu">
                 <button onclick="filterData('ALL')" class="flex-shrink-0 md:w-full text-left px-3 py-2 text-sm border nav-btn nav-active" data-filter="ALL">[::] ALL RECORDS</button>
                 <button onclick="filterData('OPTICS')" class="flex-shrink-0 md:w-full text-left px-3 py-2 text-sm border nav-btn" data-filter="OPTICS">[01] OPTICS</button>
@@ -261,6 +267,7 @@
             { id: "ebs", category: "ACOUSTICS", title: "960 Hz FCC Attention Signal", snippet: "Weaponization of the national emergency signal.", realScience: "In 1976, the FCC replaced the CONELRAD warning system with a dual-tone attention signal (853 Hz and 960 Hz) for the Emergency Broadcast System, designed to force immediate psychological attention.", canon: "Raymond Rothenberg utilizes this nationwide grid as a 'Quantum Drill.' By overriding regional switching networks, he blasts a maximum-amplitude acoustic surge of 960 Hz to keep the boundaries of reality permanently softened, preparing to breach the 1979 temporal lock.", image: "ebs.jpg", caption: "Fig 3. Broadcast transmission tower array.", sources: [{title: "FCC History of the Emergency Broadcast System", url: "https://en.wikipedia.org/wiki/Emergency_Broadcast_System"}], related: ["midnight", "cannon", "beasts"] },
             { id: "cymatics", category: "ACOUSTICS", title: "Cymatic Lithotripsy", snippet: "Destabilizing entropic matter via acoustics.", realScience: "Cymatics is the visualization of sound frequencies organizing matter into geometric shapes. Burst Wave Lithotripsy uses targeted acoustic pulses to physically shatter kidney stones.", canon: "Shadow Beasts are comprised of entropic, vantablack ferrofluid. Derrick’s heavy bass frequencies act as weaponized cymatics. By blasting hyper-amplified chords, the team forces the chaotic fluid into rigid, jagged crystal structures (Cymatic Locking), then shatters them completely using targeted acoustic pulse waves.", image: "cymatics.jpg", caption: "Fig 4. Sand organizing under harmonic resonance (Chladni Plate).", sources: [{title: "Ernst Chladni Acoustic Observations", url: "https://en.wikipedia.org/wiki/Ernst_Chladni"}, {title: "Principles of Acoustic Burst Wave Lithotripsy", url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6449176/"}], related: ["beasts", "cannon", "kuramoto"] },
             { id: "kuramoto", category: "ACOUSTICS", title: "Kuramoto Coherence Model", snippet: "Heart/brain/social phase synchronization.", realScience: "The Kuramoto model is a mathematical framework used to describe synchronization. Real-world HeartMath research suggests that when humans achieve physiological coherence (heart/brain sync), they generate a measurable, unified electromagnetic signal.", canon: "The Resonance Cannon requires absolute phase alignment to operate. Robbie's crew succeeds because they achieve 'Uncorrupted Collective Coherence.' Their deep, self-sacrificial fellowship creates a unified psychological and spiritual signal, turning their bodies into a living acoustic array.", image: "kuramoto.gif", caption: "Fig 5. Phase oscillators aligning to a unified rhythm.", sources: [{title: "Kuramoto Synchronization Models", url: "https://en.wikipedia.org/wiki/Kuramoto_model"}, {title: "Institute of HeartMath: Science of Coherence", url: "https://www.heartmath.org/research/science-of-the-heart/coherence/"}], related: ["cymatics", "cannon", "genesis"] },
+            { id: "entrainment", category: "ACOUSTICS", title: "Harmonic Entrainment", snippet: "Forcing biological brainwaves to sync with external frequencies.", realScience: "Brainwave entrainment is the hypothesized capacity of the brain to naturally synchronize its dominant EEG frequencies with the rhythm of periodic external stimuli, such as flickering lights or targeted audio tones.", canon: "Raymond Rothenberg weaponizes this biological quirk. By combining the massive 960 Hz EBS tone infrastructure with localized magnetic fields, RAEtron intends to force Jay's brainwaves into perfect phase-alignment with their machines. This essentially turns Jay's mind into a living tuning fork capable of holding the dimensional gateway open.", image: "entrainment.jpg", caption: "Fig 5b. Neural phase-locking schematic.", sources: [{title: "Brainwave Entrainment Dynamics", url: "https://en.wikipedia.org/wiki/Brainwave_entrainment"}], related: ["gate", "ebs", "jay", "raymond", "sonny"] },
 
             // QUANTUM
             { id: "loop", category: "QUANTUM", title: "Macroscopic Entanglement", snippet: "Bridging physical motors with virtual HUD dials.", realScience: "Quantum entanglement is a phenomenon where particles interact such that the state of each cannot be described independently. Advancements explore scaling this to 'macroscopic' levels, entangling larger, visible systems.", canon: "Using a localized entanglement field created by Cassie's math, the physical arcade servo-motors wired to the basement workbench (Side A) are entangled with the virtual dials in Robbie's VR HUD (Side B). When Robbie turns the spectral dial in the spirit realm, the physical dial in the real world rotates in perfect synchronization.", image: "loop.png", caption: "Fig 6. Particle entanglement schematic.", sources: [{title: "Macroscopic Quantum Phenomena", url: "https://en.wikipedia.org/wiki/Macroscopic_quantum_phenomena"}], related: ["nexus", "sutherland"] },
@@ -270,20 +277,21 @@
             { id: "gateway", category: "CONSPIRACY", title: "The Gateway Process (CIA)", snippet: "1983 Declassified CIA documents on astral projection.", realScience: "In 1983, the US Army authored a classified report for the CIA regarding the 'Gateway Experience'. It detailed altering brainwaves through Hemi-Sync audio to achieve altered states of consciousness, essentially proving astral projection as an objective reality.", canon: "Dr. Alexander Stevens originally consulted on the CIA's Gateway project. He walked away when he realized they were missing the crucial spiritual component—The True Signal. Without Solfeggio frequency anchors, projecting consciousness left subjects completely vulnerable to Decoherent Entities.", image: "gateway.jpg", caption: "Fig 8. Brainwave entrainment (Hemi-Sync) data.", sources: [{title: "CIA Reading Room: The Gateway Process (Declassified PDF)", url: "https://www.cia.gov/readingroom/docs/CIA-RDP96-00788R001700210016-5.pdf"}], related: ["elisha", "nexus", "gate"] },
             { id: "midnight", category: "CONSPIRACY", title: "Captain Midnight Hijack", snippet: "The 1986 HBO satellite hijack and Shelby's hacker inspiration.", realScience: "On April 27, 1986, electrical engineer John MacDougall hijacked HBO's satellite signal under the pseudonym 'Captain Midnight,' broadcasting a text overlay complaining about subscription rates to half the Eastern seaboard.", canon: "Shelby views John MacDougall as a hacker folk hero for exposing vulnerabilities in corporate broadcast monopolies. She studies the 1986 hijack not as a prank, but as a tactical blueprint. By understanding how Midnight bypassed the signal, she hopes to exploit the same Bell Labs switching networks her father worked on, aiming to intercept RAEtron's encrypted data streams.", image: "midnight.png", caption: "Fig 9. Satellite broadcast override visual.", sources: [{title: "The Captain Midnight Broadcast Hijacking", url: "https://en.wikipedia.org/wiki/Captain_Midnight_broadcast_signal_intrusion"}], related: ["shelby", "bell_labs"] },
             { id: "bell_labs", category: "CONSPIRACY", title: "The Bell Labs EBS Initiative", snippet: "Shelby's father, RAEtron, and the original mass-control paradigm.", realScience: "Bell Labs worked closely with the FCC to develop the emergency broadcasting infrastructure, utilizing specific acoustic frequencies to ensure the signal could penetrate ambient noise and trigger immediate psychological alertness.", canon: "Shelby's father originally collaborated with Raymond Rothenberg to weaponize the EBS for mass psychological control. When the partnership fractured, Raymond pivoted to Dr. Stevens' HyperRealm VR, planning to market it as a consumer 'game' for the same sinister purpose. However, after losing Sonny to the 1979 breach, Raymond abandoned mass control. Now, driven by grief, he plans to hijack his original Bell Labs EBS backdoor purely to rip open the Veil and save his brother.", image: "bell_labs.jpg", caption: "FILE: B-LABS // ORIGINAL_INTENT", sources: [{title: "Bell Labs Acoustic Engineering Logs", url: "#"}, {title: "Shelby's Father's Encrypted Files", url: "#"}], related: ["ebs", "shelby", "raymond"] },
-            { id: "gate", category: "CONSPIRACY", title: "GATE Program Dragnet", snippet: "Harvesting student brain maps for FFT analysis.", realScience: "The Gifted and Talented Education (GATE) program identifies highly intelligent students. Fast Fourier Transform (FFT) is an algorithm that breaks down complex signals, like brainwaves, into their constituent frequencies.", canon: "Raymond doesn’t fund the GATE program for philanthropy; he uses it as a dragnet to collect hidden brain maps of high-IQ kids. RAEtron runs FFT analysis on those maps, looking for 'Neural Phase Coherence' with Sonny’s 1979 breach signature. Jayendra ends up being the perfect biological resonance match.", image: "gate.png", caption: "Fig 10. Fast Fourier Transform frequency isolation.", sources: [{title: "Fast Fourier Transform (FFT) Mechanics", url: "https://en.wikipedia.org/wiki/Fast_Fourier_transform"}, {title: "RAEtron Internal Educational Initiatives", url: "#"}], related: ["jay", "sonny", "gateway"] },
+            { id: "gate", category: "CONSPIRACY", title: "GATE Program Dragnet", snippet: "Harvesting student brain maps for FFT analysis.", realScience: "The Gifted and Talented Education (GATE) program identifies highly intelligent students. Fast Fourier Transform (FFT) is an algorithm that breaks down complex signals, like brainwaves, into their constituent frequencies.", canon: "Raymond doesn’t fund the GATE program for philanthropy; he uses it as a dragnet to collect hidden brain maps of high-IQ kids. RAEtron runs FFT analysis on those maps, looking for 'Neural Phase Coherence' with Sonny’s 1979 breach signature. Jayendra ends up being the perfect biological resonance match.", image: "gate.png", caption: "Fig 10. Fast Fourier Transform frequency isolation.", sources: [{title: "Fast Fourier Transform (FFT) Mechanics", url: "https://en.wikipedia.org/wiki/Fast_Fourier_transform"}, {title: "RAEtron Internal Educational Initiatives", url: "#"}], related: ["jay", "sonny", "gateway", "entrainment"] },
 
             // HARDWARE
             { id: "sutherland", category: "HARDWARE", title: "Ultimate Display", snippet: "The 1965 theoretical model of a materialized room.", realScience: "In 1965, Ivan Sutherland published 'The Ultimate Display,' theorizing a room where a computer controls the existence of matter: 'A bullet displayed in such a room would be fatal.' He subsequently built 'The Sword of Damocles,' the first VR headset.", canon: "Dr. Stevens realized hardware could be tuned to pierce an *existing* reality rather than simulate one. The 1979 HyperRealm Nexus was Stevens' attempt to build the literal 'Ultimate Display' by physically bridging into the 4th-dimensional astral plane.", image: "sutherland.jpg", caption: "Fig 11. Early immersive computational architecture.", sources: [{title: "The Ultimate Display (1965 Original Paper)", url: "http://worrydream.com/refs/Sutherland%20-%20The%20Ultimate%20Display.pdf"}, {title: "The Sword of Damocles Prototype", url: "https://en.wikipedia.org/wiki/The_Sword_of_Damocles_(virtual_reality)"}], related: ["nexus", "loop"] },
             { id: "nexus", category: "HARDWARE", title: "HyperRealm Nexus", snippet: "Dr. Stevens' dormant 1979 magnum opus.", realScience: "Early VR development relied on massive, room-filling mainframes and heavy ceiling-mounted suspension rigs to process crude graphics.", canon: "Following Sutherland's footsteps, Dr. Stevens built The HyperRealm Nexus to interface with the actual dimensional fabric. Left dormant after Stevens vanished, the massive relic sat in a Queens basement until Robbie's project accidentally hit the correct sub-harmonic resonance.", image: "nexus.jpg", caption: "Fig 12. 1970s mainframe hardware architecture.", sources: [{title: "Project Coherence Incident Log (1979)", url: "#"}], related: ["sutherland", "gateway"] },
             { id: "cannon", category: "HARDWARE", title: "Resonance Cannon", snippet: "Weaponized acoustic burst waves (Static Shredder).", realScience: "Acoustic metamaterials can be designed to control and direct sound waves into highly pressurized beams of kinetic energy, capable of destabilizing physical matter.", canon: "Rewired from Stevens' hidden 1979 prototype using thick coaxial shielding and car stereo filters scavenged from RadioShack. Bridged directly into Robbie's shortwave matrix and powered by Derrick's guitar, the weapon fires a targeted acoustic shatter-wave.", image: "cannon.jpg", caption: "Fig 13. Acoustic horn amplification schematic.", sources: [{title: "Acoustic Metamaterials", url: "https://en.wikipedia.org/wiki/Acoustic_metamaterial"}, {title: "Stevens' Blueprints", url: "#"}], related: ["ebs", "cymatics"] },
             { id: "tesla", category: "HARDWARE", title: "Spirit Radios", snippet: "Tuning into the EM static of the afterlife.", realScience: "Nikola Tesla and Thomas Edison theorized 'Spirit Radios'. They believed the afterlife wasn't a physical place, but a frequency humans were simply out of tune with, using VLF radio waves as carrier signals.", canon: "Tesla and Edison were building early threshold devices. Robbie's transistor shortwave radio acts as a miniaturized version, scanning the spectral layers of the atmosphere to locate the precise resonance of the HyperRealm.", image: "tesla.jpg", caption: "Fig 14. Early high-voltage frequency resonance.", sources: [{title: "Nikola Tesla's High-Frequency Investigations", url: "https://en.wikipedia.org/wiki/Nikola_Tesla"}], related: ["ebs", "nexus"] },
+            { id: "decay_battery", category: "HARDWARE", title: "Entropic Decay Battery", snippet: "Farming trapped Shadow Beasts via acoustic Faraday cages.", realScience: "Faraday cages operate on classical electromagnetism to block external static fields. Furthermore, classical Newtonian physics (brute force and kinetic energy) fundamentally break down when applied to delicate quantum-state mechanics.", canon: "Raymond Rothenberg attempts to rip open gateways using sheer industrial electricity—applying a Newtonian hammer to a delicate quantum lock, causing immediate destructive decoherence. To solve this instability, RAEtron has captured a single Shadow Beast, trapping it within a modified acoustic Faraday cage. Raymond farms the creature's raw entropic energy, using it as a 'decay battery' to forcefully power his failing network.", image: "decay_battery.jpg", caption: "FILE: CONTAINMENT // SUB-LEVEL 4", sources: [{title: "Faraday Shielding Mechanics", url: "https://en.wikipedia.org/wiki/Faraday_cage"}, {title: "RAEtron Sub-Level 4 Containment Manifest", url: "#"}], related: ["beasts", "raymond", "coherence"] },
 
             // DIMENSIONAL
             { id: "elisha", category: "DIMENSIONAL", title: "The Elisha Protocol", snippet: "Biblical supernatural worldview vs. Flatland physics.", realScience: "Dr. Carl Sagan popularized the 'Flatland' analogy to explain the 4th dimension. A 2D square cannot comprehend a 3D apple passing through its world. A 4D object interacting with our 3D world appears as a morphing, incomprehensible shape.", canon: "This mathematical model explains the Biblical worldview. In 2 Kings 6:17, Elisha prays for his servant's eyes to be opened to see the 'chariots of fire'. The unseen armies occupy the 4D astral space. The VR lenses act as a mechanical version of Elisha's prayer.", image: "elisha.gif", caption: "Fig 15. Hypercube (Tesseract) 3D projection.", sources: [{title: "Carl Sagan Explains the 4th Dimension", url: "https://youtu.be/UnURElCzGc0"}, {title: "2 Kings 6:17", url: "https://www.biblegateway.com/passage/?search=2%20Kings%206%3A17&version=NIV"}], related: ["kilner", "beasts", "genesis"] },
             { id: "genesis", category: "DIMENSIONAL", title: "Tohu va-bohu (Signal)", snippet: "God as the Architect of Frequency.", realScience: "The Hebrew phrase 'Tohu va-bohu' from Genesis 1:2 describes the earth as 'formless and void' (chaos) before God spoke light and order into existence through spoken word (sound/frequency).", canon: "The physical world is a holographic canvas held together by a baseline frequency of absolute order—the spoken word of the Creator, termed 'The True Signal'. The spaces outside this signal are filled with raw, chaotic noise.", image: "genesis.jpg", caption: "Fig 16. Cosmic microwave background radiation (Static).", sources: [{title: "Genesis 1:2 (Tohu va-bohu)", url: "https://www.biblegateway.com/passage/?search=Genesis%201%3A2&version=NIV"}, {title: "Ephesians 6:12", url: "https://www.biblegateway.com/passage/?search=Ephesians%206%3A12&version=NIV"}], related: ["elisha", "beasts"] },
 
             // ENTITIES
-            { id: "beasts", category: "ENTITIES", title: "Decoherent Entities", snippet: "Vantablack ferrofluid entities born from the Entropic Deep.", realScience: "In physics, 'quantum decoherence' is the loss of coherence due to interacting with chaotic environmental 'noise'. Entropy is the thermodynamic principle that all systems gradually decline into disorder.", canon: "The Shadow Beasts are Decoherent Entities born from the 'Entropic Deep' (Tohu va-bohu). The kids' 1980s audio equipment translates their presence as digital static, but their physical manifestation is a shifting mass of light-absorbing, vantablack ferrofluid. They are predators that feed on the ordered energy of the human soul, causing physical surroundings to warp and decay.", image: "beasts.jpg", caption: "Fig 17. Absolute entropic signal degradation.", sources: [{title: "Physics of Entropy", url: "https://en.wikipedia.org/wiki/Entropy"}, {title: "Quantum Decoherence Models", url: "https://en.wikipedia.org/wiki/Quantum_decoherence"}], related: ["cymatics", "genesis", "ebs"] },
+            { id: "beasts", category: "ENTITIES", title: "Decoherent Entities", snippet: "Vantablack ferrofluid entities born from the Entropic Deep.", realScience: "In physics, 'quantum decoherence' is the loss of coherence due to interacting with chaotic environmental 'noise'. Entropy is the thermodynamic principle that all systems gradually decline into disorder.", canon: "The Shadow Beasts are Decoherent Entities born from the 'Entropic Deep' (Tohu va-bohu). The kids' 1980s audio equipment translates their presence as digital static, but their physical manifestation is a shifting mass of light-absorbing, vantablack ferrofluid. They are predators that feed on the ordered energy of the human soul, causing physical surroundings to warp and decay.", image: "beasts.jpg", caption: "Fig 17. Absolute entropic signal degradation.", sources: [{title: "Physics of Entropy", url: "https://en.wikipedia.org/wiki/Entropy"}, {title: "Quantum Decoherence Models", url: "https://en.wikipedia.org/wiki/Quantum_decoherence"}], related: ["cymatics", "genesis", "ebs", "decay_battery"] },
 
             // PERSONNEL
             { id: "robbie", category: "PERSONNEL", title: "Robbie", snippet: "Hardware & Interface Lead", realScience: "Primary operator of the localized 4D nexus interface.", canon: "Driven by a need to prove himself, Robbie engineers the physical-to-virtual loop. His shortwave transistor radio is the anchor point for the entire frequency hack. He starts searching for a science fair trophy but ends up fighting a spiritual war.", image: "robbie.jpg", caption: "FILE: ROBBIE // HUBRIS_PROTOCOL", sources: [{title: "Project Coherence Attendance Logs", url: "#"}], related: ["nexus", "loop", "tesla"] },
@@ -295,7 +303,7 @@
             { id: "sonny", category: "PERSONNEL", title: "Sonny Rothenberg", snippet: "The 1979 Lost Variable", realScience: "Displaced consciousness trapped in quantum superposition.", canon: "Raymond's brother, trapped in the cosmic static during the original 1979 breach. His unique waveform signature is the target of RAEtron's massive EBS broadcast grid. The ultimate goal is not to kill him, but to guide him to eternal rest.", image: "sonny.jpg", caption: "FILE: SONNY // 1979_ANOMALY", sources: [{title: "Classified RAEtron Archives", url: "#"}], related: ["nexus", "ebs", "gate"] },
             { id: "vince", category: "PERSONNEL", title: "Vince", snippet: "Tactical Defense & Physical Anchor", realScience: "In high-stress electrical and quantum environments, a physical fail-safe or 'ground' is required to break catastrophic feedback loops.", canon: "Vince serves as the fellowship's flesh-and-blood anchor. When the gateway red-lines, he uses raw physical force to shatter the hardware, breaking the localized entanglement and dropping the team safely back into their bodies. His sacrificial actions embody the core protective light that repels the Shadow Beasts.", image: "vince.jpg", caption: "FILE: VINCE // PHYSICAL_FAILSAFE", sources: [{title: "Project Coherence Attendance Logs", url: "#"}, {title: "Juvenile Hall Intake Records", url: "#"}], related: ["beasts", "nexus"] },
             { id: "josie", category: "PERSONNEL", title: "Josie", snippet: "Virtual Architecture & Visual Rendering", realScience: "The human brain requires familiar geometric architecture to process higher-dimensional or non-Euclidean data without slipping into psychological shock.", canon: "Josie translates the raw, chaotic static of the 4th dimension into comprehensible visual renderings for the VR environment. Battling her own internal fears stemming from a troubled home life, she holds the emotional line, mapping the structural coordinates that keep the team grounded.", image: "josie.jpg", caption: "FILE: JOSIE // SPATIAL_RENDERING", sources: [{title: "Project Coherence Attendance Logs", url: "#"}], related: ["sutherland", "coherence"] },
-            { id: "raymond", category: "PERSONNEL", title: "Raymond Rothenberg", snippet: "RAEtron CEO & Primary Antagonist", realScience: "Corporate exploitation of fringe science, utilizing massive capital to brute-force technological breakthroughs regardless of ethical boundaries.", canon: "Raymond began as a corporate visionary aiming to use Bell Labs infrastructure and VR for psychological mass control. But his hubris triggered the 1979 reality breach, trapping his brother Sonny in the static. Stripped of his grand ambitions, Raymond is now driven purely by desperate fraternal grief. He uses the GATE program to harvest brain-maps, seeking a biological tuning fork (Jay) to force a high-amplitude wave-function collapse via the nationwide EBS grid to drag Sonny home.", image: "raymond.jpg", caption: "FILE: R. ROTHENBERG // DIRECTOR_RAETRON", sources: [{title: "RAEtron Executive Manifest", url: "#"}, {title: "Classified Bell Labs Communications", url: "#"}], related: ["sonny", "ebs", "bell_labs", "gate"] },
+            { id: "raymond", category: "PERSONNEL", title: "Raymond Rothenberg", snippet: "RAEtron CEO & Primary Antagonist", realScience: "Corporate exploitation of fringe science, utilizing massive capital to brute-force technological breakthroughs regardless of ethical boundaries.", canon: "Raymond began as a corporate visionary aiming to use Bell Labs infrastructure and VR for psychological mass control. But his hubris triggered the 1979 reality breach, trapping his brother Sonny in the static. Stripped of his grand ambitions, Raymond is now driven purely by desperate fraternal grief. He uses the GATE program to harvest brain-maps, seeking a biological tuning fork (Jay) to force a high-amplitude wave-function collapse via the nationwide EBS grid to drag Sonny home.", image: "raymond.jpg", caption: "FILE: R. ROTHENBERG // DIRECTOR_RAETRON", sources: [{title: "RAEtron Executive Manifest", url: "#"}, {title: "Classified Bell Labs Communications", url: "#"}], related: ["sonny", "ebs", "bell_labs", "gate", "decay_battery"] },
 
             // TIMELINE / ROADMAP
             { id: "phase1", category: "TIMELINE", title: "Phase 1: The Dragnet", snippet: "RAEtron flags Jay as Sonny's frequency match.", realScience: "Corporate recruitment strategies masked as academic philanthropy.", canon: "Robbie sacrifices his green suede Vans, gathers the Misfits, and blueprints the VR project. Meanwhile, RAEtron's GATE scan dragnet uses FFT analysis to flag Jay as a resonance match for Sonny. Raymond Rothenberg uses Mr. Reynard to lure Jay into a prestigious internship, playing the patient mentor to keep Jay's brainwaves unstressed.", image: "phase1.jpg", caption: "FILE: OPERATION DRAGNET", sources: [{title: "Classified RAEtron Archives", url: "#"}], related: ["gate", "jay", "raymond"] },
@@ -368,13 +376,16 @@
             path4: {
                 title: "Path 4: GATE Entrainment",
                 theme: "How RAEtron uses school data to find a human tuning fork.",
-                desc: "<b>Dragnet:</b> Raymond uses GATE for brain maps.<br><b>Metric:</b> FFT analysis seeks Sonny's 1979 wave.<br><b>Match:</b> Jay shows Neural Phase Coherence.<br><b>Plan:</b> Harmonic Entrainment to force a bridge.<br><b>Twist:</b> Basement rig works better than RAEtron.",
+                desc: "<b>The Flaw:</b> Raymond's Newtonian brute-force Decay Battery is failing.<br><b>Dragnet:</b> He uses GATE to harvest human brain maps.<br><b>Metric:</b> FFT analysis seeks Sonny's 1979 wave.<br><b>Match:</b> Jay shows Neural Phase Coherence.<br><b>Plan:</b> Harmonic Entrainment to force a living bridge.<br><b>Twist:</b> The basement rig works better than RAEtron.",
                 nodes: [
                     { id: "Raymond", group: "corp" }, { id: "GATE Program", group: "corp" },
                     { id: "FFT Analysis", group: "tech" }, { id: "Sonny's Signature", group: "entity" },
-                    { id: "Jayendra", group: "human" }, { id: "Harmonic Entrainment", group: "tech" }
+                    { id: "Jayendra", group: "human" }, { id: "Harmonic Entrainment", group: "tech" },
+                    { id: "Decay Battery", group: "tech" }
                 ],
                 links: [
+                    { source: "Raymond", target: "Decay Battery", label: "Brute-Forces" },
+                    { source: "Decay Battery", target: "GATE Program", label: "Fails, Requires" },
                     { source: "Raymond", target: "GATE Program", label: "Harvests" },
                     { source: "GATE Program", target: "FFT Analysis", label: "Supplies Maps" },
                     { source: "FFT Analysis", target: "Jayendra", label: "Isolates Match" },
@@ -458,6 +469,7 @@
         }
 
         function filterData(category) {
+            document.getElementById('search-input').value = ''; // Clear search when clicking category
             document.getElementById('manifesto').classList.toggle('hidden', category !== 'ALL');
             document.getElementById('grid-view').classList.remove('hidden');
             document.getElementById('detail-view').classList.add('hidden');
@@ -475,6 +487,11 @@
             grid.innerHTML = '';
             const filtered = category === 'ALL' ? database : database.filter(item => item.category === category);
             
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div class="col-span-full p-4 border border-[var(--accent-red)] text-[var(--accent-red)] font-mono text-sm bg-[var(--bg-main)] opacity-80">[ ERROR: 0 RECORDS MATCH CURRENT QUERY ]</div>';
+                return;
+            }
+
             filtered.forEach(item => {
                 const card = document.createElement('div');
                 card.className = "dyn-glow-box p-4 cursor-pointer hover:scale-[1.02] transition-transform flex flex-col";
@@ -490,6 +507,8 @@
 
         function showDetail(id) {
             const item = database.find(i => i.id === id);
+            if (!item) return; // safety check
+            
             document.getElementById('grid-view').classList.add('hidden');
             document.getElementById('manifesto').classList.add('hidden');
             document.getElementById('network-view').classList.add('hidden');
@@ -545,9 +564,56 @@
             
             document.querySelectorAll('#nav-menu button').forEach(b => b.classList.remove('nav-active'));
             document.querySelector('[data-filter="ALL"]').classList.add('nav-active');
+            document.getElementById('search-input').value = ''; // Clear search
             
             document.getElementById('content-scroll').scrollTop = 0;
             window.scrollTo(0,0);
+        }
+
+        // --- Search Logic ---
+        function handleSearch(event) {
+            const query = event.target.value.toLowerCase();
+            
+            if (query.trim() === '') {
+                // Revert to "ALL" if search is cleared
+                document.querySelector('[data-filter="ALL"]').click();
+                return;
+            }
+
+            document.getElementById('manifesto').classList.add('hidden');
+            document.getElementById('grid-view').classList.remove('hidden');
+            document.getElementById('detail-view').classList.add('hidden');
+            document.getElementById('network-view').classList.add('hidden');
+            
+            document.querySelectorAll('#nav-menu button').forEach(b => b.classList.remove('nav-active'));
+            
+            const filtered = database.filter(item => 
+                item.title.toLowerCase().includes(query) || 
+                item.snippet.toLowerCase().includes(query) || 
+                item.category.toLowerCase().includes(query) ||
+                item.canon.toLowerCase().includes(query) ||
+                item.realScience.toLowerCase().includes(query)
+            );
+            
+            const grid = document.getElementById('grid-view');
+            grid.innerHTML = '';
+            
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div class="col-span-full p-4 border border-[var(--accent-red)] text-[var(--accent-red)] font-mono text-sm bg-[var(--bg-main)] opacity-80">[ ERROR: 0 RECORDS MATCH CURRENT QUERY ]</div>';
+                return;
+            }
+
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "dyn-glow-box p-4 cursor-pointer hover:scale-[1.02] transition-transform flex flex-col";
+                card.onclick = () => showDetail(item.id);
+                card.innerHTML = `
+                    <span class="text-[10px] mb-2 border-b dyn-border pb-1 opacity-70">${item.category}</span>
+                    <h3 class="font-vt323 text-xl md:text-2xl mb-2 text-[var(--text-main)]">${item.title}</h3>
+                    <p class="text-xs opacity-80 text-[var(--text-main)]">${item.snippet}</p>
+                `;
+                grid.appendChild(card);
+            });
         }
 
         // --- D3 Network Graph Logic ---
@@ -562,6 +628,50 @@
             
             // Render first path by default
             renderGraph('path1');
+        }
+
+        // Helper function to map D3 Node IDs to Database IDs
+        function mapNodeToDatabaseId(nodeId) {
+            const map = {
+                "Bell Labs": "bell_labs",
+                "Shelby's Dad": "shelby", // Routes to Shelby's file
+                "EBS 853Hz+960Hz": "ebs",
+                "Raymond": "raymond",
+                "Shadow Beasts": "beasts",
+                "HyperRealm Nexus": "nexus",
+                "Sutherland's Display": "sutherland",
+                "Sagan's 4D": "elisha", // Routes to Elisha protocol (Sagan ref)
+                "Elisha's Servant": "elisha",
+                "Dr. Stevens' Nexus": "nexus",
+                "Cassie/Robbie Rig": "loop", // Routes to entanglement loop
+                "Ernst Chladni": "cymatics",
+                "Hans Jenny": "cymatics",
+                "Heart Coherence": "kuramoto",
+                "Resonance Cannon": "cannon",
+                "Burst Wave": "cannon", // Routes to Resonance Cannon
+                "GATE Program": "gate",
+                "FFT Analysis": "gate",
+                "Jayendra": "jay",
+                "Sonny's Signature": "sonny",
+                "Harmonic Entrainment": "entrainment",
+                "Decay Battery": "decay_battery",
+                "Genesis (Tohu va-bohu)": "genesis",
+                "The True Signal": "genesis",
+                "Strange Theology": "elisha", // Routes to biblical worldview
+                "Robbie": "robbie",
+                "Cassie": "cassie",
+                "Ben": "ben",
+                "Derrick": "derrick",
+                "Shelby": "shelby",
+                "Jay": "jay",
+                "Sonny": "sonny",
+                "Freq. of Chaos": "ebs",
+                "VR Thin Place": "nexus",
+                "GATE Dragnet": "gate",
+                "Biblical Signal": "genesis",
+                "Bell Labs Data": "bell_labs"
+            };
+            return map[nodeId] || null; // Return the DB id, or null if no direct match
         }
 
         function renderGraph(pathKey) {
@@ -646,6 +756,14 @@
                 .attr("fill", "var(--bg-main)")
                 .attr("stroke", d => colorMap[d.group] || "var(--text-main)")
                 .attr("stroke-width", 2)
+                .style("cursor", d => mapNodeToDatabaseId(d.id) ? "pointer" : "grab") // Change cursor if clickable
+                .on("click", (event, d) => { // Changed to single click
+                    if (event.defaultPrevented) return; // Prevents triggering if the user was just dragging the node
+                    const dbId = mapNodeToDatabaseId(d.id);
+                    if (dbId) {
+                        showDetail(dbId);
+                    }
+                })
                 .call(drag(simulation));
 
             // Node Labels
@@ -656,7 +774,15 @@
                 .attr("class", "node-text")
                 .attr("x", 12)
                 .attr("y", 3)
-                .text(d => d.id);
+                .text(d => d.id)
+                .style("cursor", d => mapNodeToDatabaseId(d.id) ? "pointer" : "default")
+                .on("click", (event, d) => { // Changed to single click
+                    if (event.defaultPrevented) return; // Prevents triggering if dragging
+                    const dbId = mapNodeToDatabaseId(d.id);
+                    if (dbId) {
+                        showDetail(dbId);
+                    }
+                });
 
             simulation.on("tick", () => {
                 link
@@ -701,8 +827,19 @@
             }
         }
 
-        // Initialize
-        window.onload = () => filterData('ALL');
+        // Initialize & Deep Linking Logic
+        window.onload = () => {
+            filterData('ALL');
+            
+            // Check if a specific file was linked in the URL (e.g., ?file=decay_battery)
+            const urlParams = new URLSearchParams(window.location.search);
+            const fileId = urlParams.get('file');
+            
+            if (fileId) {
+                // Slight delay to ensure the DOM is fully painted before opening the detail view
+                setTimeout(() => showDetail(fileId), 150);
+            }
+        };
     </script>
 </body>
 </html>
